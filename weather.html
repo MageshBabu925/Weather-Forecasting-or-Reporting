@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather App</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-image: url('https://media.istockphoto.com/id/866601416/photo/thermometer-with-hot-temperature-weather.jpg?s=2048x2048&w=is&k=20&c=SbMzAjHUQyMFIYeGqsrUaZ9OnRsaYaUjmkFKtybv0us=');
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        @media (max-width: 768px) {
+            th, td {
+                font-size: 12px;
+                padding: 4px;
+            }
+        }
+        .container {
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 20px;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="my-6 text-center">Weather Information</h1>
+        <div class="form-group row">
+            <div class="col-12 col-md-8 offset-md-2">
+                <input type="text" id="location" class="form-control" placeholder="Enter location">
+            </div>
+        </div>
+        <div class="form-group row">
+            <div class="col-12 col-md-4 offset-md-4 text-center">
+                <button onclick="getWeather()" class="btn btn-primary btn-block">Find</button>
+            </div>
+        </div>
+        <div id="weatherResults" class="table-responsive">
+            <table class="table table-striped" id="weatherTable">
+                <thead class="thead-dark">
+                    <tr>
+                        <th>Day and Date </th>
+                        <th>Temperature (°C / °F)</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const apiKey = '9b6ecd1db581c055fcb09075fd63185d';
+
+        function getWeather() {
+            const location = document.getElementById('location').value;
+            const weatherTableBody = document.getElementById('weatherTable').querySelector('tbody');
+
+            weatherTableBody.innerHTML = '';
+
+            fetch(`https://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(location)}&limit=1&appid=${apiKey}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(geoData => {
+                    const { lat, lon } = geoData[0];
+
+                    for (let i = 0; i < 5; i++) {
+                        const date = new Date();
+                        date.setDate(date.getDate() - i);
+
+                        fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}`)
+                            .then(response => {
+                                if (!response.ok) {
+                                    throw new Error('Network response was not ok');
+                                }
+                                return response.json();
+                            })
+                            .then(data => {
+                                const tempCelsius = data.main.temp - 273.15;
+                                const tempFahrenheit = (tempCelsius * 9 / 5) + 32;
+                                weatherTableBody.innerHTML += `
+                                    <tr>
+                                        <td>${date.toDateString()}</td>
+                                        <td>${tempCelsius.toFixed(1)}°C / ${tempFahrenheit.toFixed(1)}°F</td>
+                                        <td>${data.weather[0].description}</td>
+                                    </tr>`;
+                            })
+                            .catch(error => {
+                                console.error('Error fetching weather data:', error);
+                            });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching location data:', error);
+                });
+        }
+    </script>
+</body>
+</html>
